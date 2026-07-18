@@ -1,6 +1,6 @@
 [project]
 name = "hermes-s3"
-version = "0.1.0"
+version = "0.1.1"
 description = "Standalone Hermes plugin: back up files/dirs to any S3-compatible store and restore/list/remove remote objects."
 readme = "README.md"
 requires-python = ">=3.10"
