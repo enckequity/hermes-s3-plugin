@@ -1,5 +1,8 @@
 # s3 — Hermes plugin
 
+> Fork note (0.1.2): local paths are confined to a backup directory (`S3_BACKUP_DIR`, default `plugin-data/s3/backups` in
+> the profile home; relative paths start there), and push, pull and rm ask for approval on every call. See CHANGELOG.md.
+
 ![s3](logo.png)
 
 Back up files and directory trees to any S3-compatible object store, then

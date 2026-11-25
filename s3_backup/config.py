@@ -1,9 +1,9 @@
 """Environment-based configuration for the s3 plugin.
 
 Secrets (access key / secret key) are read from the process environment only
-(typically ~/.hermes/.env on a Hermes host). Behavioral config (endpoint,
-region, bucket, rules path) is also env-driven. Nothing sensitive is ever
-written to the repo.
+(the profile's secret scope). Behavioral config (endpoint, region, bucket,
+rules path, local backup directory) is also env-driven. Nothing sensitive is
+ever written to the repo.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-DEFAULT_RULES_PATH = "~/.hermes/s3-backup.rules.yaml"
+RULES_FILENAME = "s3-backup.rules.yaml"
 
 
 @dataclass(frozen=True)
@@ -50,7 +50,11 @@ class Config:
 
 
 def load_config() -> Config:
-    rules_path = os.environ.get("S3_BACKUP_RULES") or DEFAULT_RULES_PATH
+    try:
+        from .paths import _home
+    except ImportError:  # top-level import when run as a script (tests)
+        from paths import _home
+    rules_path = os.environ.get("S3_BACKUP_RULES") or str(_home() / RULES_FILENAME)
     return Config(
         endpoint=os.environ.get("S3_BACKUP_ENDPOINT") or None,
         region=os.environ.get("S3_BACKUP_REGION") or None,

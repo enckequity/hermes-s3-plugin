@@ -1,11 +1,12 @@
 name: s3
-version: '0.1.1'
-description: Generic S3-compatible backup and restore operations for Hermes
+version: '0.1.2'
+description: Push, pull, list and delete files in an S3-compatible bucket, with local paths confined to a backup directory
 provides_tools:
   - s3-push
   - s3-pull
   - s3-ls
   - s3-rm
-provides_hooks: []
+provides_hooks:
+  - pre_tool_call
 author: Tane Piper
 requires_env: []

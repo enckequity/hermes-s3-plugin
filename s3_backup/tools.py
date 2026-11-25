@@ -1,4 +1,4 @@
-"""JSON-returning Hermes tool handlers for S3 backup operations."""
+"""JSON-returning tool handlers for S3 backup operations."""
 from __future__ import annotations
 
 import importlib.util
@@ -64,7 +64,7 @@ def handle_push(args: dict, **kwargs) -> str:
         bucket = config.load_config().bucket
         if not bucket:
             raise RuntimeError("S3_BACKUP_BUCKET is required for S3 backup operations")
-        return _storage_result("push", storage.push(local, remote, bucket, bool(args.get("force", False))))
+        return _storage_result("push", storage.push(local, remote, bucket, args.get("force") is True))
     except Exception as exc:
         return _error("push", exc)
 
@@ -109,9 +109,9 @@ def handle_rm(args: dict, **kwargs) -> str:
             prefix = values["remote"]
         if not key and not prefix:
             raise ValueError("rm requires a key, prefix, or rule supplying one")
-        if not args.get("confirm", False):
+        if args.get("confirm") is not True:
             return _error("rm", "Deletion requires confirm=true")
-        recursive = bool(args.get("recursive", False))
+        recursive = args.get("recursive") is True
         if prefix and not recursive:
             return _error("rm", "Deleting a prefix requires recursive=true")
         bucket = config.load_config().bucket

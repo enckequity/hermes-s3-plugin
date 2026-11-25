@@ -1,4 +1,4 @@
-"""s3_backup — Hermes plugin package for S3-compatible backup/restore.
+"""s3_backup — plugin package for S3-compatible backup/restore.
 
 This package holds the plugin logic. The repository-root ``__init__.py``
 is a thin entry shim that re-exports :func:`register` so Hermes can
@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 
 try:
-    from . import tools
+    from . import approval, tools
     from .cli import register as register_cli
     from .schemas import (
         S3_BACKUP_LS_SCHEMA,
@@ -19,6 +19,7 @@ try:
         S3_BACKUP_RM_SCHEMA,
     )
 except ImportError:  # top-level import when run as a script (tests)
+    import approval
     import tools
     from cli import register as register_cli
     from schemas import (
@@ -40,7 +41,8 @@ _SCHEMAS = {
 
 
 def register(ctx) -> None:
-    """Register s3 tools, CLI, and skill with Hermes."""
+    """Register the s3 tools, the approval hook for push/pull/rm, the CLI and the skill."""
+    ctx.register_hook("pre_tool_call", approval.hook)
     for name, schema in _SCHEMAS.items():
         ctx.register_tool(
             name=name,
@@ -49,6 +51,7 @@ def register(ctx) -> None:
             handler=tools.HANDLERS[name],
             check_fn=tools.available,
             override=False,
+            description=schema["description"],
             emoji="📦",
         )
 

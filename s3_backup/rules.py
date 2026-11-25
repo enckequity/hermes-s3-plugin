@@ -117,8 +117,11 @@ def resolve(
         raise ValueError(f"Unsupported S3 backup rule operation: {op}")
     if not isinstance(name, str) or not name:
         raise ValueError("S3 backup rule name must be a non-empty string")
-    if path is None:
-        from config import load_config
+    if loaded is None and path is None:
+        try:
+            from .config import load_config
+        except ImportError:  # top-level import when run as a script (tests)
+            from config import load_config
 
         path = load_config().rules_path
     rules = loaded if loaded is not None else load_rules(path)

@@ -1,4 +1,4 @@
-"""CLI subtree: `hermes s3 push|pull|ls|rm`."""
+"""CLI subtree: `s3 push|pull|ls|rm`. Local paths are confined to the backup directory (see paths.py)."""
 
 from __future__ import annotations
 
@@ -21,8 +21,8 @@ def _resolve(args: argparse.Namespace, op: str):
     if args.rule:
         rules = rules_mod.load_rules(cfg.rules_path)
         r = rules_mod.resolve(rules, args.rule, op)
-        local = r.get("local") or args.local
-        remote = r.get("remote") or args.remote
+        local = args.local or r.get("local")
+        remote = args.remote or r.get("remote")
     else:
         local = args.local
         remote = args.remote
@@ -68,7 +68,7 @@ def _cmd_pull(args: argparse.Namespace) -> int:
     if not bucket:
         print(json.dumps({"ok": False, "error": "S3_BACKUP_BUCKET not configured"}))
         return 2
-    ok, payload = storage.pull(local, remote, bucket)
+    ok, payload = storage.pull(remote, local, bucket)
     print(json.dumps({"ok": ok, **payload}, ensure_ascii=False))
     return 0 if ok else 1
 
@@ -102,22 +102,25 @@ def _cmd_rm(args: argparse.Namespace) -> int:
 
 
 def register(subparser: argparse.ArgumentParser) -> None:
-    """Build the `hermes s3` subcommand tree."""
+    """Build the `s3` subcommand tree."""
     subs = subparser.add_subparsers(dest="s3_action", required=True)
 
-    def _add_common(p: argparse.ArgumentParser) -> None:
+    def _add_common(p: argparse.ArgumentParser, op: str = "") -> None:
+        # --src and --dst name the source and destination of this command: local then remote for push, the reverse for pull.
+        local_flags = {"push": ("--local", "--src"), "pull": ("--local", "--dst")}.get(op, ("--local",))
+        remote_flags = {"push": ("--remote", "--dst"), "pull": ("--remote", "--src")}.get(op, ("--remote", "--src"))
         p.add_argument("--rule", help="Named rule from the rules YAML")
-        p.add_argument("--local", "--dst", dest="local", help="Local file/dir (push source / pull target)")
-        p.add_argument("--remote", "--src", dest="remote", help="Remote key/prefix")
+        p.add_argument(*local_flags, dest="local", help="Local file/dir inside the backup directory (push source / pull target)")
+        p.add_argument(*remote_flags, dest="remote", help="Remote key/prefix")
 
     p = subs.add_parser("push", help="Upload file or dir to the bucket")
-    _add_common(p)
+    _add_common(p, "push")
     p.add_argument("positionals", nargs="*", metavar="PATH", help="Local source followed by remote key/prefix")
     p.add_argument("--force", action="store_true", help="Overwrite existing keys")
     p.set_defaults(func=_cmd_push)
 
     p = subs.add_parser("pull", help="Download key/prefix to a local dir")
-    _add_common(p)
+    _add_common(p, "pull")
     p.add_argument("positionals", nargs="*", metavar="PATH", help="Remote key/prefix followed by local destination")
     p.set_defaults(func=_cmd_pull)
 
