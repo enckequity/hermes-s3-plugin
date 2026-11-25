@@ -198,7 +198,10 @@ def review_fix_tests(fake):
         require(not ok and "symlink" in payload["error"]["message"], "configured symlinked backup dir refused")
         os.environ["S3_BACKUP_DIR"] = str(home / "plugins")
         ok, payload = storage.pull("p", "victim", "bucket")
-        require(not ok and "plugin-data" in payload["error"]["message"], "backup dir inside home must be under plugin-data")
+        require(not ok and "plugin-data/s3" in payload["error"]["message"], "backup dir inside home must be under plugin-data/s3")
+        os.environ["S3_BACKUP_DIR"] = str(home / "plugin-data")
+        ok, payload = storage.pull("p", "victim", "bucket")
+        require(not ok and "plugin-data/s3" in payload["error"]["message"], "other plugins' data refused")
 
         # Pull creates the default directory on first use.
         os.environ.pop("S3_BACKUP_DIR")
@@ -236,6 +239,13 @@ def review_fix_tests(fake):
         fake.objects["bk"] = b"exact"
         ok, report = storage.rm("bk", "bucket", True, False)
         require(ok and "bk" not in fake.objects, "exact rm with a sibling prefix present")
+
+        # Folder markers are skipped; a key plus recursive is shown as a prefix delete.
+        fake.objects.update({"mk/": b"", "mk/sub/": b"", "mk/f": b"f"})
+        ok, report = storage.pull("mk", "markers", "bucket")
+        require(ok and report["files"] == 1 and os.listdir(backups / "markers") == ["f"], f"folder markers skipped: {report}")
+        message = approval.hook("s3-rm", {"key": "mk", "recursive": True, "confirm": True})["message"]
+        require("every object under prefix mk" in message, message)
 
         # Tilde paths resolve against the user's home, outside the backup directory.
         ok, payload = storage.push("~/.env", "x", "bucket", True)

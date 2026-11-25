@@ -12,7 +12,7 @@ to [Semantic Versioning](https://semver.org/).
   path, symlinks included, and refuse anything outside it, so a push cannot
   upload the profile's `.env` and a pull cannot write into its plugins. The
   backup directory itself may not be reached through a symlink, may not
-  contain the profile home, and inside the home must sit under `plugin-data`.
+  contain the profile home, and inside the home must sit under `plugin-data/s3`.
 - Symlinks and hard-linked files inside a pushed directory are skipped and
   reported (`skipped_links`); a hard-linked file named directly is refused.
   Pull writes a temporary file and renames it into place, so it never writes
@@ -32,6 +32,7 @@ to [Semantic Versioning](https://semver.org/).
   `--src`/`--dst` now follow each command's direction, explicit paths
   override a rule, and `--rule` no longer fails when loaded as a package.
 - The rules file defaults to the active profile home.
+- Pull skips folder-marker keys ending in `/` and keeps the umask file mode.
 
 ## [0.1.0] - 2026-07-18
 

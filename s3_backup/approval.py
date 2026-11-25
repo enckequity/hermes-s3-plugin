@@ -104,7 +104,7 @@ def _message(op: str, args: dict) -> str:
         local = _first(args, "dst", "local") or values["local"]
         return f"Download {_text(remote)} from bucket {bucket} into {_local_label(local)}{rule}, replacing files of the same name."
     target = args.get("key") or args.get("prefix") or values["remote"]
-    what = "every object under prefix" if not args.get("key") else "object"
+    what = "object" if args.get("key") and args.get("recursive") is not True else "every object under prefix"
     return f"Delete {what} {_text(target)} from bucket {bucket}{rule}. This cannot be undone."
 
 

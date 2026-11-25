@@ -4,7 +4,7 @@ The backup directory is ``S3_BACKUP_DIR`` when set, else ``<home>/plugin-data/s3
 active profile home. Relative local paths are taken relative to it. A path is accepted only when its fully
 resolved form (every symlink followed) is the backup directory or inside it, so neither ``../`` nor a symlink can
 reach the profile's secrets, plugins or config. The backup directory itself may not be reached through a symlink,
-may not contain the profile home, and inside the profile home must sit under ``plugin-data``.
+may not contain the profile home, and inside the profile home must sit under ``plugin-data/s3`` (never another plugin's data).
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ def backup_dir() -> Path:
         raise PathRefused(f"The backup directory may not be reached through a symlink: {base} resolves to {root}")
     if _within(home, root):
         raise PathRefused(f"The backup directory may not contain the profile home: {root}")
-    if _within(root, home) and not _within(root, home / "plugin-data"):
-        raise PathRefused(f"Inside the profile home the backup directory must sit under plugin-data: {root}")
+    if _within(root, home) and not _within(root, home / "plugin-data" / "s3"):
+        raise PathRefused(f"Inside the profile home the backup directory must sit under plugin-data/s3: {root}")
     return root
 
 

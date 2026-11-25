@@ -18,6 +18,12 @@ except ImportError:  # top-level import when run as a script (tests)
 _NOFOLLOW = getattr(os, "O_NOFOLLOW", 0)
 
 
+def _umask() -> int:
+    mask = os.umask(0)
+    os.umask(mask)
+    return mask
+
+
 def _make_client(cfg: Config) -> Any:
     try:
         import boto3
@@ -204,6 +210,7 @@ def _read_body_to_file(body: Any, destination: Path) -> int:
                         break
                     stream.write(chunk)
                     written += len(chunk)
+        os.chmod(temporary, 0o666 & ~_umask())
         os.replace(temporary, destination)
         return written
     except BaseException:
@@ -227,6 +234,8 @@ def pull(remote: str, local: str, bucket: str, cfg: Config | None = None) -> tup
         # Without an exact match only keys below ``remote/`` belong to it; ``backups`` must not pull ``backups-old/x``.
         selected = [item for item in listed if item.get("Key") == remote] if exact else [
             item for item in listed if item["Key"].startswith(prefix)]
+        # Folder-marker objects ("a/", "a/b/") hold no file; skip them rather than refuse the whole pull.
+        selected = [item for item in selected if not item["Key"].endswith("/")]
         destinations: list[tuple[dict[str, Any], Path]] = []
         for item in selected:
             key = item["Key"]
